@@ -7,8 +7,6 @@ load_dotenv()
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 
-engine = create_engine(DATABASE_URL, echo=True)
-
 engine = create_engine(
     DATABASE_URL,
     echo=True,  # log consultas SQL
@@ -17,6 +15,8 @@ engine = create_engine(
     pool_size=5,  
     max_overflow=10,  
 )
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 class Base(DeclarativeBase):
