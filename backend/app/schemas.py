@@ -29,3 +29,11 @@ class ResourceResponse(ResourceBase):
 
     class Config:
         from_attributes = True
+
+class SmartAssistRequest(BaseModel):
+    title: str
+    resource_type: ResourceType
+
+class SmartAssistResponse(BaseModel):
+    description: str
+    tags: List[str]

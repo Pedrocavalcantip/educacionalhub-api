@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from . import crud, schemas
 from .database import SessionLocal
+from .service_ia import generate_smart_description
 
 router = APIRouter(prefix="/resources", tags=["Resources"])
 
@@ -46,3 +47,12 @@ def delete(resource_id: int, db: Session = Depends(get_db)):
     if not db_resource:
         raise HTTPException(status_code=404, detail="Resource not found")
     return {"message": "Deleted successfully"}
+
+
+@router.post("/smart-assist", response_model=schemas.SmartAssistResponse)
+async def smart_assist(data: schemas.SmartAssistRequest):
+    try:
+        result = await generate_smart_description(title=data.title, resource_type=data.type.value)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
