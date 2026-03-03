@@ -61,11 +61,11 @@ class ResourceResponse(ResourceBase):
 
 class SmartAssistRequest(BaseModel):
     title: str
-    resource_type: ResourceType
+    type: ResourceType
 
-    @field_validator("resource_type", mode="before")
+    @field_validator("type", mode="before")
     @classmethod
-    def normalize_resource_type(cls, v):
+    def normalize_type(cls, v):
         return normalizar_tipo(v)
 
 
