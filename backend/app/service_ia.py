@@ -23,8 +23,6 @@ else:
 async def generate_smart_description(title: str, resource_type: str) -> dict:
     start_time = time.time()
 
-    model = genai.GenerativeModel("gemini-1.5-flash")
-
     prompt = f"""
     Atue como um Assistente Pedagógico especialista em catalogação de materiais didáticos.
     Gere uma descrição útil para alunos e sugira 3 tags relevantes baseadas no título e tipo.
