@@ -15,7 +15,7 @@ logger = logging.getLogger("ai_logger")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    client = genai.Client(api_key=GEMINI_API_KEY)
 else:
     logger.error("GEMINI_API_KEY não encontrada no arquivo .env")
 
