@@ -26,10 +26,8 @@ async def generate_smart_description(title: str, resource_type: str) -> dict:
     prompt = f"""
     Atue como um Assistente Pedagógico especialista em catalogação de materiais didáticos.
     Gere uma descrição útil para alunos e sugira 3 tags relevantes baseadas no título e tipo.
-    
     Título: {title}
     Tipo: {resource_type}
-    
     Responda EXATAMENTE no formato JSON abaixo:
     {{
         "description": "texto da descrição aqui",
