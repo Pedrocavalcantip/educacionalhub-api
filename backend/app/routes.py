@@ -34,7 +34,9 @@ def read_one(resource_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{resource_id}", response_model=schemas.ResourceResponse)
-def update(resource_id: int, resource: schemas.ResourceUpdate, db: Session = Depends(get_db)):
+def update(
+    resource_id: int, resource: schemas.ResourceUpdate, db: Session = Depends(get_db)
+):
     db_resource = crud.update_resource(db, resource_id, resource)
     if not db_resource:
         raise HTTPException(status_code=404, detail="Resource not found")
@@ -52,7 +54,9 @@ def delete(resource_id: int, db: Session = Depends(get_db)):
 @router.post("/smart-assist", response_model=schemas.SmartAssistResponse)
 async def smart_assist(data: schemas.SmartAssistRequest):
     try:
-        result = await generate_smart_description(title=data.title, resource_type=data.type.value)
+        result = await generate_smart_description(
+            title=data.title, resource_type=data.type.value
+        )
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

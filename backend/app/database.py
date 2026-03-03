@@ -10,10 +10,10 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(
     DATABASE_URL,
     echo=True,  # log consultas SQL
-    pool_pre_ping=True,  
-    pool_recycle=3600,  
-    pool_size=5,  
-    max_overflow=10,  
+    pool_pre_ping=True,
+    pool_recycle=3600,
+    pool_size=5,
+    max_overflow=10,
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

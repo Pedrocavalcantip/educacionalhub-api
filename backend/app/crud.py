@@ -4,9 +4,9 @@ from . import models, schemas
 
 def create_resource(db: Session, resource: schemas.ResourceCreate):
     resource_data = resource.model_dump()
-    # Conveerter HttpUrl para string 
-    if 'url' in resource_data and resource_data['url'] is not None:
-        resource_data['url'] = str(resource_data['url'])
+    # Conveerter HttpUrl para string
+    if "url" in resource_data and resource_data["url"] is not None:
+        resource_data["url"] = str(resource_data["url"])
     db_resource = models.Resource(**resource_data)
     db.add(db_resource)
     db.commit()
@@ -29,7 +29,7 @@ def update_resource(db: Session, resource_id: int, resource: schemas.ResourceUpd
 
     for key, value in resource.model_dump(exclude_unset=True).items():
         # Converter HttpUrl para string
-        if key == 'url' and value is not None:
+        if key == "url" and value is not None:
             value = str(value)
         setattr(db_resource, key, value)
 
