@@ -4,7 +4,6 @@ from . import crud, schemas
 from .database import SessionLocal
 from .service_ia import generate_smart_description
 import os
-import shutil
 from datetime import datetime
 
 router = APIRouter(prefix="/resources", tags=["Resources"])
