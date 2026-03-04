@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 logger = logging.getLogger("ai_logger")
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
@@ -24,10 +24,10 @@ async def generate_smart_description(title: str, resource_type: str) -> dict:
 
     prompt = f"""
     Atue como um Assistente Pedagógico especialista em catalogação de materiais didáticos.
-    Gere uma descrição útil para alunos e sugira 3 tags relevantes baseadas no título e tipo.
+    Seu objetivo é gerar uma descrição útil para alunos e sugirir 3 tags relevantes baseadas no título e tipo.
     Título: {title}
     Tipo: {resource_type}
-    Responda EXATAMENTE no formato JSON abaixo:
+    Responda conforme o formato JSON abaixo:
     {{
         "description": "texto da descrição aqui",
         "tags": ["tag1", "tag2", "tag3"]
@@ -49,11 +49,11 @@ async def generate_smart_description(title: str, resource_type: str) -> dict:
 
         latency = round(time.time() - start_time, 2)
         logger.info(
-            f'[AI Request: Title="{title}", TokenUsage={token_usage}, Latency={latency}s.'
+            f'AI Request: Title="{title}", TokenUsage={token_usage}, Latency={latency}s'
         )
 
         return result_data
 
     except Exception as e:
-        logger.error(f"[INFO]Falha na comunicação com o Gemini: {e}")
+        logger.error(f"Falha na comunicação com o Gemini: {e}")
         raise e
