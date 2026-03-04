@@ -55,5 +55,5 @@ async def generate_smart_description(title: str, resource_type: str) -> dict:
         return result_data
 
     except Exception as e:
-        logger.error(f"Falha na comunicação com o Gemini: {e}")
+        logger.error(f"[INFO]Falha na comunicação com o Gemini: {e}")
         raise e
