@@ -20,6 +20,7 @@ interface FormData {
 
 export default function App() {
   const [resources, setResources] = useState<Resource[]>([]);
+  const [showWelcome, setShowWelcome] = useState<boolean>(true);  
   const [loadingAI, setLoadingAI] = useState<boolean>(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -226,12 +227,60 @@ export default function App() {
   };
 
   return (
+    <>
+      {showWelcome && (
+        <div 
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-md"
+          onClick={() => setShowWelcome(false)} 
+        >
+          <div 
+            className="bg-white border-4 border-black p-8 max-w-2xl w-full shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] relative"
+            onClick={(e) => e.stopPropagation()} 
+          >
+            <h2 className="text-3xl font-black mb-4 uppercase border-b-4 border-black pb-2 bg-[#FDE047] inline-block px-2">
+              Rápido guia do EducacionalHub!
+            </h2>
+            
+            <div className="text-lg font-medium space-y-4 mb-8 text-gray-800">
+              <p>
+                Este é um repositório inteligente de materiais didáticos, o objetivo é agilizar o trabalho dos conteudistas usando <strong>Inteligência Artificial</strong>.
+              </p>
+              
+              <div className="bg-yellow-50 border-4 border-black p-4">
+                <h3 className="font-black uppercase mb-2">Como testar:</h3>
+                <ol className="list-decimal list-inside space-y-2 font-bold">
+                  <li>Digite um <strong>Título</strong> e escolha o <strong>Tipo</strong> do material.</li>
+                  <li>Clique no botão rosa <span className="text-[#db2777]">"Gerar Descrição com IA"</span>.</li>
+                  <li>Veja a mágica acontecer: o Gemini preencherá a descrição e as tags!</li>
+                  <li>Faça o upload do PDF (ou insira o Link) e salve.</li>
+                  <li>Teste também Editar, Excluir e navegar pela Paginação abaixo.</li>
+                </ol>
+              </div>
+            </div>
+
+            <button 
+              onClick={() => setShowWelcome(false)}
+              className="w-full bg-[#60A5FA] hover:bg-[#3b82f6] text-black border-4 border-black p-4 font-black uppercase text-xl shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] transition-all"
+            >
+              Entendido! 
+            </button>
+          </div>
+        </div>
+      )}
+
     <div className="min-h-screen bg-yellow-50 text-black p-8 font-sans selection:bg-pink-300">
       
-      <header className="mb-12 text-center">
+      <header className="mb-12 text-center relative">
         <h1 className="text-4xl font-black border-4 border-black p-4 inline-block bg-[#FDE047] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
           Gerenciamento de Recursos Educacionais 
         </h1>
+        <button
+          onClick={() => setShowWelcome(true)}
+          className="absolute top-0 right-0 bg-[#60A5FA] hover:bg-[#3b82f6] text-white border-4 border-black p-3 font-black text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all"
+          title="Ajuda"
+        >
+          ?
+        </button>
       </header>
 
       <main className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -398,5 +447,6 @@ export default function App() {
 
       </main>
     </div>
+    </>
   );
 }
