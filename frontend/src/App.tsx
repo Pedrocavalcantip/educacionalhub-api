@@ -23,6 +23,8 @@ export default function App() {
   const [loadingAI, setLoadingAI] = useState<boolean>(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 2;
   const [formData, setFormData] = useState<FormData>({
     title: '',
     type: 'Vídeo',
@@ -31,22 +33,23 @@ export default function App() {
     tags: ''
   });
 
-  const fetchResources = async () => {
+  const fetchResources = async (page: number) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/resources/');
+      const skip = (page - 1) * itemsPerPage;
+      const response = await fetch(`http://127.0.0.1:8000/resources/?skip=${skip}&limit=${itemsPerPage}`);
       if (!response.ok) throw new Error("Erro ao buscar dados");
       
       const data = await response.json();
-      setResources(data.reverse()); 
+      setResources(data); 
     } catch (error) {
       console.error("Erro na listagem:", error);
     }
   };
 
-  // Roda apenas uma vez quando a página carrega
+  // Atualiza a lista sempre que a página mudar
   useEffect(() => {
-    fetchResources();
-  }, []);
+    fetchResources(currentPage);
+  }, [currentPage]);
 
   const handleEditClick = (resource: Resource) => {
     setEditingId(resource.id);
@@ -179,14 +182,12 @@ export default function App() {
 
       if (!dbResponse.ok) throw new Error('Erro ao processar requisição no banco.');
 
-      const savedResource = await dbResponse.json();
-
       if (editingId) {
-        setResources(prev => prev.map(res => res.id === editingId ? savedResource : res));
         alert("Recurso atualizado com sucesso!");
+        fetchResources(currentPage);
       } else {
-        setResources(prev => [savedResource, ...prev]);
         alert("Recurso adicionado com sucesso!");
+        setCurrentPage(1);
       }
 
       handleCancelEdit(); 
@@ -210,9 +211,13 @@ export default function App() {
         throw new Error("Erro ao excluir o recurso no servidor.");
       }
 
-      setResources(prevResources => prevResources.filter(res => res.id !== id));
-      
       alert("Recurso excluído com sucesso!");
+      
+      if (resources.length === 1 && currentPage > 1) {
+        setCurrentPage(prev => prev - 1);
+      } else {
+        fetchResources(currentPage);
+      }
       
     } catch (error) {
       console.error("Erro na exclusão:", error);
@@ -223,7 +228,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-yellow-50 text-black p-8 font-sans selection:bg-pink-300">
       
-      <header className="mb-12">
+      <header className="mb-12 text-center">
         <h1 className="text-4xl font-black border-4 border-black p-4 inline-block bg-[#FDE047] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
           Gerenciamento de Recursos Educacionais 
         </h1>
@@ -367,6 +372,28 @@ export default function App() {
 
             </div>
           ))}
+
+          <div className="flex justify-center items-center gap-4 mt-8 pb-12">
+            <button 
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="bg-white border-4 border-black p-3 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 disabled:opacity-50 active:translate-y-1 active:shadow-none transition-all"
+            >
+              ← Anterior
+            </button>
+
+            <div className="bg-[#FDE047] border-4 border-black px-6 py-3 font-black text-xl shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]">
+              {currentPage}
+            </div>
+
+            <button 
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={resources.length < itemsPerPage}
+              className="bg-white border-4 border-black p-3 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] hover:bg-gray-100 disabled:opacity-50 active:translate-y-1 active:shadow-none transition-all"
+            >
+              Próxima →
+            </button>
+          </div>
         </section>
 
       </main>
