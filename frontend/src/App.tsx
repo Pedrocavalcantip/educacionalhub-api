@@ -31,18 +31,21 @@ export default function App() {
     tags: ''
   });
 
-  // apenas para simular uma lista 
+  const fetchResources = async () => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/resources/');
+      if (!response.ok) throw new Error("Erro ao buscar dados");
+      
+      const data = await response.json();
+      setResources(data.reverse()); 
+    } catch (error) {
+      console.error("Erro na listagem:", error);
+    }
+  };
+
+  // Roda apenas uma vez quando a página carrega
   useEffect(() => {
-    setResources([
-      {
-        id: 1,
-        title: 'Introdução à Álgebra Linear',
-        type: 'Vídeo',
-        url: 'https://youtube.com/...',
-        description: 'Este vídeo oferece uma introdução clara e concisa aos conceitos da álgebra linear e espaços euclidianos.',
-        tags: 'Matemática, Álgebra, Espaços'
-      }
-    ]);
+    fetchResources();
   }, []);
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -102,27 +105,78 @@ export default function App() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
-    const novoRecurso = {
-      id: Date.now(), //importante bd
-      title: formData.title,
-      type: formData.type,
-      url: formData.url,
-      description: formData.description,
-      tags: formData.tags
-    };
+    let finalUrl = formData.url;
 
-    setResources(prevResources => [novoRecurso, ...prevResources]);
+    // Se for PDF, fazer upload primeiro
+    if (formData.type === 'PDF' && pdfFile) {
+      try {
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', pdfFile);
 
-    setFormData({
-      title: '',
-      type: 'Vídeo',
-      url: '',
-      description: '',
-      tags: ''
-    });
-    setPdfFile(null);
+        const uploadResponse = await fetch('http://127.0.0.1:8000/resources/upload-pdf', {
+          method: 'POST',
+          body: uploadFormData
+        });
 
-    alert("Recurso adicionado com sucesso!");
+        if (!uploadResponse.ok) {
+          throw new Error('Erro ao fazer upload do PDF');
+        }
+
+        const uploadData = await uploadResponse.json();
+        // Converte o caminho do arquivo para URL completa
+        finalUrl = `http://127.0.0.1:8000/${uploadData.file_path.replace(/\\/g, '/')}`;
+        
+      } catch (error) {
+        console.error('Erro no upload:', error);
+        alert('Erro ao fazer upload do PDF. Verifique se o backend está rodando!');
+        return;
+      }
+    }
+    
+    // Converte tags de string para array
+    const tagsArray = formData.tags 
+      ? formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0)
+      : [];
+
+    try {
+      const dbResponse = await fetch('http://127.0.0.1:8000/resources/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          type: formData.type,
+          url: finalUrl,
+          description: formData.description,
+          tags: tagsArray
+        })
+      });
+
+      if (!dbResponse.ok) {
+        throw new Error('Erro ao salvar os dados no banco.');
+      }
+
+      const savedResource = await dbResponse.json();
+
+      setResources(prevResources => [savedResource, ...prevResources]);
+
+      setFormData({
+        title: '',
+        type: 'Vídeo',
+        url: '',
+        description: '',
+        tags: ''
+      });
+      setPdfFile(null);
+
+      alert("Recurso adicionado com sucesso no Banco de Dados!");
+
+    } catch (error) {
+      console.error('Erro ao salvar no banco:', error);
+      alert('Erro ao salvar o recurso no banco de dados.');
+    }
   };
 
   return (
@@ -237,9 +291,9 @@ export default function App() {
                 <a href={res.url} target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline mb-4 inline-block">Acessar Link </a>
                 
                 <div className="flex flex-wrap gap-2 mt-2">
-                  {res.tags.split(',').map((tag, idx) => (
+                  {(Array.isArray(res.tags) ? res.tags : res.tags.split(',')).map((tag, idx) => (
                     <span key={idx} className="bg-gray-200 border-2 border-black px-2 py-1 text-xs font-bold uppercase">
-                      {tag.trim()}
+                      {typeof tag === 'string' ? tag.trim() : tag}
                     </span>
                   ))}
                 </div>
