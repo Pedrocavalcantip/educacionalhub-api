@@ -22,7 +22,7 @@ export default function App() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loadingAI, setLoadingAI] = useState<boolean>(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
-  
+  const [editingId, setEditingId] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormData>({
     title: '',
     type: 'Vídeo',
@@ -47,6 +47,25 @@ export default function App() {
   useEffect(() => {
     fetchResources();
   }, []);
+
+  const handleEditClick = (resource: Resource) => {
+    setEditingId(resource.id);
+    setFormData({
+      title: resource.title,
+      type: resource.type,
+      url: resource.url,
+      description: resource.description,
+      // Se as tags vierem como array do banco, transformamos em string para o input
+      tags: Array.isArray(resource.tags) ? resource.tags.join(', ') : resource.tags
+    });
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setFormData({ title: '', type: 'Vídeo', url: '', description: '', tags: '' });
+    setPdfFile(null);
+  };
 
   const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -139,8 +158,12 @@ export default function App() {
       : [];
 
     try {
-      const dbResponse = await fetch('http://127.0.0.1:8000/resources/', {
-        method: 'POST',
+      const urlBase = 'http://127.0.0.1:8000/resources/';
+      const urlFinal = editingId ? `${urlBase}${editingId}` : urlBase;
+      const method = editingId ? 'PUT' : 'POST';
+
+      const dbResponse = await fetch(urlFinal, {
+        method: method,
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json'
@@ -154,28 +177,23 @@ export default function App() {
         })
       });
 
-      if (!dbResponse.ok) {
-        throw new Error('Erro ao salvar os dados no banco.');
-      }
+      if (!dbResponse.ok) throw new Error('Erro ao processar requisição no banco.');
 
       const savedResource = await dbResponse.json();
 
-      setResources(prevResources => [savedResource, ...prevResources]);
+      if (editingId) {
+        setResources(prev => prev.map(res => res.id === editingId ? savedResource : res));
+        alert("Recurso atualizado com sucesso!");
+      } else {
+        setResources(prev => [savedResource, ...prev]);
+        alert("Recurso adicionado com sucesso!");
+      }
 
-      setFormData({
-        title: '',
-        type: 'Vídeo',
-        url: '',
-        description: '',
-        tags: ''
-      });
-      setPdfFile(null);
-
-      alert("Recurso adicionado com sucesso no Banco de Dados!");
+      handleCancelEdit(); 
 
     } catch (error) {
-      console.error('Erro ao salvar no banco:', error);
-      alert('Erro ao salvar o recurso no banco de dados.');
+      console.error('Erro ao salvar:', error);
+      alert('Erro na comunicação com o banco de dados.');
     }
   };
 
@@ -250,7 +268,7 @@ export default function App() {
                 </div>
                 {pdfFile && (
                   <p className="mt-2 text-sm font-medium text-gray-700">
-                    📄 {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)
+                    {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)
                   </p>
                 )}
               </div>
@@ -292,9 +310,21 @@ export default function App() {
               />
             </div>
 
-            <button type="submit" className="mt-4 bg-[#60A5FA] hover:bg-[#3b82f6] text-black border-4 border-black p-4 font-black uppercase text-lg shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] transition-all">
-              Salvar Recurso
-            </button>
+            <div className="flex flex-col gap-2">
+              <button type="submit" className="mt-4 bg-[#60A5FA] hover:bg-[#3b82f6] text-black border-4 border-black p-4 font-black uppercase text-lg shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] transition-all">
+                {editingId ? 'Atualizar Recurso' : 'Salvar Recurso'}
+              </button>
+
+              {editingId && (
+                <button 
+                  type="button" 
+                  onClick={handleCancelEdit}
+                  className="bg-gray-400 hover:bg-gray-500 text-black border-4 border-black p-2 font-black uppercase shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all"
+                >
+                  Cancelar Edição
+                </button>
+              )}
+            </div>
           </form>
         </section>
 
@@ -323,7 +353,9 @@ export default function App() {
               </div>
 
               <div className="flex gap-4 mt-6 border-t-4 border-black pt-4">
-                <button className="flex-1 bg-white border-4 border-black p-2 font-bold uppercase hover:bg-gray-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none transition-all">
+                <button 
+                  onClick={() => handleEditClick(res)} 
+                  className="flex-1 bg-white border-4 border-black p-2 font-bold uppercase hover:bg-gray-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none transition-all">
                   Editar
                 </button>
                 <button 
