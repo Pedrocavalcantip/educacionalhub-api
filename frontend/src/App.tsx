@@ -21,6 +21,7 @@ interface FormData {
 export default function App() {
   const [resources, setResources] = useState<Resource[]>([]);
   const [loadingAI, setLoadingAI] = useState<boolean>(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState<FormData>({
     title: '',
@@ -48,33 +49,88 @@ export default function App() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type === 'application/pdf') {
+      setPdfFile(file);
+      // Define a URL como o nome do arquivo temporariamente
+      setFormData({ ...formData, url: file.name });
+    } else {
+      alert('Por favor, selecione um arquivo PDF válido!');
+      e.target.value = '';
+    }
+  };
+
   const handleSmartAssist = async () => {
     if (!formData.title) return alert("Preencha o título primeiro!");
     
     setLoadingAI(true);
     
-    setTimeout(() => {
+    try {
+      const response = await fetch('http://127.0.0.1:8000/resources/smart-assist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          title: formData.title,
+          type: formData.type
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Erro no servidor: ${response.status}`);
+      }
+
+      const data = await response.json();
+
       setFormData(prev => ({
         ...prev,
-        description: 'Descrição gerada brilhantemente pela IA baseada no seu título!',
-        tags: 'Tag1, Tag2, Tag3'
+        description: data.description,
+        tags: data.tags.join(', ') 
       }));
+
+    } catch (error) {
+      console.error("Erro ao gerar descrição:", error);
+      alert("Erro ao conectar com a IA. Verifique se o backend está rodando!");
+    } finally {
       setLoadingAI(false);
-    }, 2000);
+    }
   };
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Salvar no banco:", formData);
-    //futuro: enviar para backend e atualizar lista de recursos
+    
+    const novoRecurso = {
+      id: Date.now(), //importante bd
+      title: formData.title,
+      type: formData.type,
+      url: formData.url,
+      description: formData.description,
+      tags: formData.tags
+    };
+
+    setResources(prevResources => [novoRecurso, ...prevResources]);
+
+    setFormData({
+      title: '',
+      type: 'Vídeo',
+      url: '',
+      description: '',
+      tags: ''
+    });
+    setPdfFile(null);
+
+    alert("Recurso adicionado com sucesso!");
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F4F4] text-black p-8 font-sans selection:bg-pink-300">
+    <div className="min-h-screen bg-yellow-50 text-black p-8 font-sans selection:bg-pink-300">
       
       <header className="mb-12">
         <h1 className="text-4xl font-black border-4 border-black p-4 inline-block bg-[#FDE047] shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
-          EducacionalHub 
+          Gerenciamento de Recursos Educacionais 
         </h1>
       </header>
 
@@ -89,7 +145,7 @@ export default function App() {
               <input 
                 type="text" name="title" value={formData.title} onChange={handleInputChange}
                 className="w-full border-4 border-black p-3 focus:outline-none focus:bg-yellow-50 font-medium"
-                placeholder="Ex: Padrões de Projeto em Python" required
+                placeholder="Ex: Introdução à Álgebra Linear" required
               />
             </div>
 
@@ -103,14 +159,34 @@ export default function App() {
               </select>
             </div>
 
-            <div>
-              <label className="font-bold block mb-1">URL / Link</label>
-              <input 
-                type="url" name="url" value={formData.url} onChange={handleInputChange}
-                className="w-full border-4 border-black p-3 focus:outline-none focus:bg-yellow-50 font-medium"
-                placeholder="https://..." required
-              />
-            </div>
+            {formData.type === 'PDF' ? (
+              <div>
+                <label className="font-bold block mb-1">Upload de PDF</label>
+                <div className="flex gap-2 items-center">
+                  <input 
+                    type="file" 
+                    accept=".pdf,application/pdf"
+                    onChange={handleFileChange}
+                    className="w-full border-4 border-black p-3 focus:outline-none focus:bg-yellow-50 font-medium file:mr-4 file:py-2 file:px-4 file:border-0 file:font-bold file:bg-pink-100 file:text-black hover:file:bg-pink-200 file:cursor-pointer"
+                    required
+                  />
+                </div>
+                {pdfFile && (
+                  <p className="mt-2 text-sm font-medium text-gray-700">
+                    📄 {pdfFile.name} ({(pdfFile.size / 1024 / 1024).toFixed(2)} MB)
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div>
+                <label className="font-bold block mb-1">URL / Link</label>
+                <input 
+                  type="url" name="url" value={formData.url} onChange={handleInputChange}
+                  className="w-full border-4 border-black p-3 focus:outline-none focus:bg-yellow-50 font-medium"
+                  placeholder="https://..." required
+                />
+              </div>
+            )}
 
             <div className="mt-2 mb-2">
               <button 
@@ -119,7 +195,7 @@ export default function App() {
                 disabled={loadingAI}
                 className="w-full bg-[#F472B6] hover:bg-[#db2777] text-white border-4 border-black p-3 font-black uppercase flex items-center justify-center gap-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-[0px_0px_0px_0px_rgba(0,0,0,1)] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                {loadingAI ? '⏳ A IA está pensando...' : ' Gerar Descrição com IA'}
+                {loadingAI ? 'Pensando...' : ' Gerar Descrição com IA'}
               </button>
             </div>
 
@@ -158,7 +234,7 @@ export default function App() {
                 </div>
                 
                 <p className="text-gray-800 font-medium mb-4">{res.description}</p>
-                <a href={res.url} target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline mb-4 inline-block">Acessar Link ↗</a>
+                <a href={res.url} target="_blank" rel="noreferrer" className="text-blue-600 font-bold hover:underline mb-4 inline-block">Acessar Link </a>
                 
                 <div className="flex flex-wrap gap-2 mt-2">
                   {res.tags.split(',').map((tag, idx) => (
