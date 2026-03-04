@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
 from . import crud, schemas
 from .database import SessionLocal
 from .service_ia import generate_smart_description
+import os
+import shutil
+from datetime import datetime
 
 router = APIRouter(prefix="/resources", tags=["Resources"])
 
@@ -60,3 +63,42 @@ async def smart_assist(data: schemas.SmartAssistRequest):
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.post("/upload-pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    if not file.content_type == "application/pdf":
+        raise HTTPException(
+            status_code=400, detail="Apenas arquivos PDF são permitidos"
+        )
+
+    MAX_FILE_SIZE = 10 * 1024 * 1024  
+    file_content = await file.read()
+    if len(file_content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=400, detail="Arquivo muito grande. Máximo: 10MB"
+        )
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    original_filename = file.filename.replace(" ", "_")
+    unique_filename = f"{timestamp}_{original_filename}"
+
+    upload_dir = "uploads"
+    os.makedirs(upload_dir, exist_ok=True)
+
+    file_path = os.path.join(upload_dir, unique_filename)
+    try:
+        with open(file_path, "wb") as buffer:
+            buffer.write(file_content)
+
+        return {
+            "filename": unique_filename,
+            "original_filename": file.filename,
+            "file_path": file_path,
+            "size": len(file_content),
+            "message": "PDF enviado com sucesso!",
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Erro ao salvar arquivo: {str(e)}"
+        )
