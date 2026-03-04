@@ -28,6 +28,7 @@ if not os.path.exists(upload_dir):
     os.makedirs(upload_dir)
 app.mount("/uploads", StaticFiles(directory=upload_dir), name="uploads")
 
+
 @app.get("/")
 def root():
     return {"message": "API Working"}

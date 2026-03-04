@@ -72,7 +72,7 @@ async def upload_pdf(file: UploadFile = File(...)):
             status_code=400, detail="Apenas arquivos PDF são permitidos"
         )
 
-    MAX_FILE_SIZE = 10 * 1024 * 1024  
+    MAX_FILE_SIZE = 10 * 1024 * 1024
     file_content = await file.read()
     if len(file_content) > MAX_FILE_SIZE:
         raise HTTPException(
@@ -99,6 +99,4 @@ async def upload_pdf(file: UploadFile = File(...)):
             "message": "PDF enviado com sucesso!",
         }
     except Exception as e:
-        raise HTTPException(
-            status_code=500, detail=f"Erro ao salvar arquivo: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Erro ao salvar arquivo: {str(e)}")
