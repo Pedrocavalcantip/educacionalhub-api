@@ -179,6 +179,29 @@ export default function App() {
     }
   };
 
+  const handleDelete = async (id: number) => {
+    const confirmDelete = window.confirm("Tem certeza que deseja excluir este recurso?");
+    if (!confirmDelete) return;
+
+    try {
+      const response = await fetch(`http://127.0.0.1:8000/resources/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        throw new Error("Erro ao excluir o recurso no servidor.");
+      }
+
+      setResources(prevResources => prevResources.filter(res => res.id !== id));
+      
+      alert("Recurso excluído com sucesso!");
+      
+    } catch (error) {
+      console.error("Erro na exclusão:", error);
+      alert("Não foi possível excluir o recurso.");
+    }
+  };
+
   return (
     <div className="min-h-screen bg-yellow-50 text-black p-8 font-sans selection:bg-pink-300">
       
@@ -303,7 +326,9 @@ export default function App() {
                 <button className="flex-1 bg-white border-4 border-black p-2 font-bold uppercase hover:bg-gray-100 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none transition-all">
                   Editar
                 </button>
-                <button className="flex-1 bg-red-500 text-white border-4 border-black p-2 font-bold uppercase hover:bg-red-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none transition-all">
+                <button 
+                  onClick={() => handleDelete(res.id)} 
+                  className="flex-1 bg-red-500 text-white border-4 border-black p-2 font-bold uppercase hover:bg-red-600 shadow-[2px_2px_0px_0px_rgba(0,0,0,1)] active:translate-y-px active:shadow-none transition-all">
                   Excluir
                 </button>
               </div>
